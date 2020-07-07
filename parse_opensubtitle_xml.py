@@ -1,14 +1,22 @@
 from bs4 import BeautifulSoup
 import zipfile, requests, tqdm, os
-
+from archiver import Archive
 
 def download_subtitles():
     """Downloads english OpenSubtitles corpus"""
-    def download_url(url, save_path, chunk_size=128):
-        r = requests.get(url, stream=True)
-        with open(save_path, 'wb') as fd:
-            for chunk in r.iter_content(chunk_size=chunk_size):
-                fd.write(chunk)
+    def download_url(url, fname):
+        resp = requests.get(url, stream=True)
+        total = int(resp.headers.get('content-length', 0))
+        with open(fname, 'wb') as file, tqdm.tqdm(
+                desc=fname,
+                total=total,
+                unit='iB',
+                unit_scale=True,
+                unit_divisor=1024,
+        ) as bar:
+            for data in resp.iter_content(chunk_size=1024):
+                size = file.write(data)
+                bar.update(size)
     download_url("http://opus.nlpl.eu/download.php?f=OpenSubtitles/v2018/raw/en.zip", "en.zip")
 
 
@@ -21,7 +29,6 @@ def get_xml_filepaths_from_zip(archive):
         if file.endswith('.xml'):
             # archive.extract(file, 'destination_path')
             xml_files.append(file)
-    print(len(xml_files))
     return xml_files
 
 def get_n_tokens(path_to_xml, archive):
@@ -39,7 +46,10 @@ def parse_single_example(path_to_xml, archive):
     subtitles = soup("s")
     subs = []
     for each in subtitles:
-        subs.append(each.get_text())
+        l = each.get_text()
+        l = l.replace('\n', '')
+        l = '"' + l.replace('\t', '').strip().strip('-').strip('/') + '"'
+        subs.append(l)
     seperator = ' '
     return remove_blank_lines(seperator.join(subs))
 
@@ -51,14 +61,24 @@ def save_to_txt_file(txt, out_name):
     textfile.write(txt)
     textfile.close()
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 if __name__ == "__main__":
     download_subtitles()
-    archive = zipfile.ZipFile("en.zip")
-    xml_fps = get_xml_filepaths_from_zip(archive)
+    z = zipfile.ZipFile("en.zip")
+    xml_fps = get_xml_filepaths_from_zip(z)
+    n_files = len(xml_fps)
+    xml_fps_chunked = chunks(xml_fps, int(n_files/10))
     try:
         os.mkdir('out')
     except:
         pass
-    for count, f in tqdm.tqdm(enumerate(xml_fps)):
-        x = parse_single_example(f, archive)
-        save_to_txt_file(x, f"out/subs_{count:07}")
+    archive = Archive('out')
+    for chunk in xml_fps_chunked:
+        for count, f in tqdm.tqdm(enumerate(chunk), total=len(chunk)):
+            x = parse_single_example(f, z)
+            archive.add_data(x)
+        archive.commit()
