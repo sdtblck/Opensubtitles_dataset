@@ -1,0 +1,5 @@
+
+- to get subtitles from yt:
+    https://medium.com/@morga046/creating-an-nlp-data-set-from-youtube-subtitles-fb59c0955c2
+- automate w selenium?:
+    https://stackoverflow.com/questions/56705650/how-to-capture-network-traffic-with-selenium
