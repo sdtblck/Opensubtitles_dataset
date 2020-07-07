@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-import zipfile, requests, tqdm
+import zipfile, requests, tqdm, os
 
 
 def download_subtitles():
@@ -55,6 +55,10 @@ if __name__ == "__main__":
     download_subtitles()
     archive = zipfile.ZipFile("en.zip")
     xml_fps = get_xml_filepaths_from_zip(archive)
+    try:
+        os.mkdir('out')
+    except:
+        pass
     for count, f in tqdm.tqdm(enumerate(xml_fps)):
         x = parse_single_example(f, archive)
         save_to_txt_file(x, f"out/subs_{count:07}")
