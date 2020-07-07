@@ -52,8 +52,6 @@ def save_to_txt_file(txt, out_name):
     textfile.close()
 
 if __name__ == "__main__":
-    # txt = parse_single_example("example.xml")
-    # save_to_txt_file(txt, "test")
     download_subtitles()
     archive = zipfile.ZipFile("en.zip")
     xml_fps = get_xml_filepaths_from_zip(archive)
