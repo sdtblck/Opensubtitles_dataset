@@ -1,6 +1,4 @@
-json
 zstd
 requests
 tqdm
 bs4
-zipfile
