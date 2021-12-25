@@ -2,8 +2,8 @@ from bs4 import BeautifulSoup
 import zipfile, requests, tqdm, os
 from archiver import Archive
 
-def download_subtitles():
-    """Downloads english OpenSubtitles corpus"""
+def download_subtitles(language='en'):
+    """Downloads OpenSubtitles corpus for a specific language"""
     def download_url(url, fname):
         resp = requests.get(url, stream=True)
         total = int(resp.headers.get('content-length', 0))
@@ -17,7 +17,7 @@ def download_subtitles():
             for data in resp.iter_content(chunk_size=1024):
                 size = file.write(data)
                 bar.update(size)
-    download_url("http://opus.nlpl.eu/download.php?f=OpenSubtitles/v2018/raw/en.zip", "en.zip")
+    download_url(f"http://opus.nlpl.eu/download.php?f=OpenSubtitles/v2018/raw/{language}.zip", f"{language}.zip")
 
 
 def get_xml_filepaths_from_zip(archive):
@@ -66,9 +66,11 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
+
 if __name__ == "__main__":
-    download_subtitles()
-    z = zipfile.ZipFile("en.zip")
+    language = 'en'
+    download_subtitles(language)
+    z = zipfile.ZipFile(f"{language}.zip")
     xml_fps = get_xml_filepaths_from_zip(z)
     n_files = len(xml_fps)
     xml_fps_chunked = chunks(xml_fps, int(n_files/10))
